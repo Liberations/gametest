@@ -22,6 +22,7 @@ class Assets {
   static const String modelsLeaderboardEntry = 'lib/models/leaderboard_entry.dart';
   static const String modelsPlayer = 'lib/models/player.dart';
   static const String providersGameProvider = 'lib/providers/game_provider.dart';
+  static const String screensAboutScreen = 'lib/screens/about_screen.dart';
   static const String screensGameScreen = 'lib/screens/game_screen.dart';
   static const String screensLeaderboardScreen = 'lib/screens/leaderboard_screen.dart';
 

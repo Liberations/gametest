@@ -29,7 +29,8 @@ jobs:
 
       - name: Build web (release)
         run: |
-          flutter build web --release  --no-tree-shake-icons --base-href /gametest/
+          # Use HTML renderer for smaller bundle size (faster initial load).
+          flutter build web --release --web-renderer html --base-href /gametest/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

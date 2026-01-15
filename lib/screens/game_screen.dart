@@ -7,6 +7,7 @@ import '../models/grid_cell.dart';
 import 'leaderboard_screen.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
+import 'about_screen.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -243,8 +244,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
         appBar: AppBar(
           backgroundColor: Colors.black,
           elevation: 0,
-          title: Text('Gift Game', style: TextStyle(color: Colors.white)),
+          title: Text('Box Game', style: TextStyle(color: Colors.white)),
           actions: [
+            IconButton(
+              icon: Icon(Icons.info_outline, color: Colors.white),
+              tooltip: 'About',
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => AboutScreen()));
+              },
+            ),
             IconButton(
               icon: Icon(Icons.leaderboard, color: Colors.white),
               tooltip: 'Leaderboard',
@@ -327,23 +335,31 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
                                   double adx = _panAccumDx.abs();
                                   double ady = _panAccumDy.abs();
                                   // Make web swipes more sensitive by lowering threshold; keep desktop a bit stricter
-                                  double threshold = kIsWeb ? 8.0 : 20.0;
+                                  double threshold = kIsWeb ? 4.0 : 20.0;
                                   if (adx > ady && adx > threshold) {
                                     if (_panAccumDx > 0) _move(1, 0); else _move(-1, 0);
                                     _gestureLocked = true;
+                                    // allow subsequent triggers during a continuous drag by briefly unlocking
+                                    Future.delayed(Duration(milliseconds: 150), () {
+                                      _gestureLocked = false;
+                                    });
                                   } else if (ady > adx && ady > threshold) {
                                     if (_panAccumDy > 0) _move(0, 1); else _move(0, -1);
                                     _gestureLocked = true;
+                                    Future.delayed(Duration(milliseconds: 150), () {
+                                      _gestureLocked = false;
+                                    });
                                   }
                                 }
                               },
                               onPanEnd: (details) {
-                                // Velocity-based fling detection (improves responsiveness on web/touchpad)
+                                // Velocity-based fling detection: lower threshold on web for better responsiveness
                                 try {
                                   final vx = details.velocity.pixelsPerSecond.dx;
                                   final vy = details.velocity.pixelsPerSecond.dy;
                                   final vAbs = Offset(vx, vy).distance;
-                                  const flingThreshold = 600; // px/s
+                                  // lower fling threshold on web so lighter flicks register
+                                  final flingThreshold = kIsWeb ? 350.0 : 600.0; // px/s
                                   if (!_gestureLocked && vAbs > flingThreshold) {
                                     if (vx.abs() > vy.abs()) {
                                       if (vx > 0) _move(1, 0); else _move(-1, 0);
