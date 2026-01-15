@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_state.dart';
 import '../models/player.dart';
 import '../models/grid_cell.dart';
@@ -12,6 +14,16 @@ class GameProvider with ChangeNotifier {
   int? lastOpenedY;
   String? lastOpenedContentId;
 
+  // Swipe settings (px thresholds)
+  // defaults chosen to reasonable values; user can change with Settings screen
+  double hThresholdTouch = 3.0;
+  double hThresholdTrackpad = 2.0;
+  double hThresholdDesktop = 5.0;
+  double vThresholdTouch = 16.0;
+  double vThresholdTrackpad = 12.0;
+  double vThresholdDesktop = 20.0;
+  double flingThreshold = 600.0; // px/s
+
   GameState? get gameState => _gameState;
 
   Future<void> initializeGame() async {
@@ -22,19 +34,82 @@ class GameProvider with ChangeNotifier {
         player: Player(),
       );
     }
-    // Clamp player coordinates to valid range in case a saved game used old scheme (y == -1)
-    if (_gameState!.player.x < 0 || _gameState!.player.x >= 5) {
-      _gameState!.player.x = 2;
+    // load saved settings
+    await _loadSettings();
+
+    // Clamp player coordinates to valid range
+    if (_gameState!.player.x < 0 || _gameState!.player.x >= GameState.COLS) {
+      _gameState!.player.x = (GameState.COLS / 2).floor();
     }
-    if (_gameState!.player.y < 0 || _gameState!.player.y >= 8) {
+    if (_gameState!.player.y < 0 || _gameState!.player.y >= GameState.ROWS) {
       _gameState!.player.y = 0;
     }
     // Ensure the player's starting cell is always an opened empty box
-    if (_gameState!.player.y >= 0 && _gameState!.player.y < 8) {
+    if (_gameState!.player.y >= 0 && _gameState!.player.y < GameState.ROWS) {
       _gameState!.grid[_gameState!.player.x][_gameState!.player.y] = GridCell(type: CellType.boxOpen, isOpened: true);
     }
     notifyListeners();
   }
+
+  // Persistent settings helpers
+  Future<void> _loadSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      hThresholdTouch = prefs.getDouble('hThresholdTouch') ?? hThresholdTouch;
+      hThresholdTrackpad = prefs.getDouble('hThresholdTrackpad') ?? hThresholdTrackpad;
+      hThresholdDesktop = prefs.getDouble('hThresholdDesktop') ?? hThresholdDesktop;
+      vThresholdTouch = prefs.getDouble('vThresholdTouch') ?? vThresholdTouch;
+      vThresholdTrackpad = prefs.getDouble('vThresholdTrackpad') ?? vThresholdTrackpad;
+      vThresholdDesktop = prefs.getDouble('vThresholdDesktop') ?? vThresholdDesktop;
+      flingThreshold = prefs.getDouble('flingThreshold') ?? flingThreshold;
+      notifyListeners();
+    } catch (e) {
+      // ignore load errors
+      print('Failed to load settings: $e');
+    }
+  }
+
+  Future<void> saveSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('hThresholdTouch', hThresholdTouch);
+      await prefs.setDouble('hThresholdTrackpad', hThresholdTrackpad);
+      await prefs.setDouble('hThresholdDesktop', hThresholdDesktop);
+      await prefs.setDouble('vThresholdTouch', vThresholdTouch);
+      await prefs.setDouble('vThresholdTrackpad', vThresholdTrackpad);
+      await prefs.setDouble('vThresholdDesktop', vThresholdDesktop);
+      await prefs.setDouble('flingThreshold', flingThreshold);
+    } catch (e) {
+      print('Failed to save settings: $e');
+    }
+  }
+
+  double getHorizontalThreshold(PointerDeviceKind? kind, {bool isWeb = false}) {
+    if (isWeb) {
+      if (kind == PointerDeviceKind.touch) return hThresholdTouch;
+      return hThresholdTrackpad;
+    }
+    return hThresholdDesktop;
+  }
+
+  double getVerticalThreshold(PointerDeviceKind? kind, {bool isWeb = false}) {
+    if (isWeb) {
+      if (kind == PointerDeviceKind.touch) return vThresholdTouch;
+      return vThresholdTrackpad;
+    }
+    return vThresholdDesktop;
+  }
+
+  double getFlingThreshold() => flingThreshold;
+
+  // setters for settings
+  void updateHThresholdTouch(double v) { hThresholdTouch = v; notifyListeners(); }
+  void updateHThresholdTrackpad(double v) { hThresholdTrackpad = v; notifyListeners(); }
+  void updateHThresholdDesktop(double v) { hThresholdDesktop = v; notifyListeners(); }
+  void updateVThresholdTouch(double v) { vThresholdTouch = v; notifyListeners(); }
+  void updateVThresholdTrackpad(double v) { vThresholdTrackpad = v; notifyListeners(); }
+  void updateVThresholdDesktop(double v) { vThresholdDesktop = v; notifyListeners(); }
+  void updateFlingThreshold(double v) { flingThreshold = v; notifyListeners(); }
 
   // Move player and open only the box at the player's new position
   List<CellType> movePlayer(int dx, int dy) {
@@ -49,7 +124,7 @@ class GameProvider with ChangeNotifier {
       newY = 0;
     }
 
-    if (newX < 0 || newX >= 5 || newY < -1 || newY >= 8) return [];
+    if (newX < 0 || newX >= GameState.COLS || newY < -1 || newY >= GameState.ROWS) return [];
 
     // If player cannot move due to steps/health, don't change state here (UI should check canMove)
     // Update player position and steps
@@ -66,7 +141,7 @@ class GameProvider with ChangeNotifier {
     lastOpenedContentId = null;
 
     List<CellType> opened = [];
-    if (newY >= 0 && newY < 8) {
+    if (newY >= 0 && newY < GameState.ROWS) {
       var cell = _gameState!.grid[newX][newY];
       bool wasOpened = cell.isOpened;
 
@@ -117,7 +192,7 @@ class GameProvider with ChangeNotifier {
     _gameState!.grid = GameState.generateGrid();
     _gameState!.player = Player(); // reset position
     // open starting cell for the new level and make it an empty open box
-    if (_gameState!.player.y >= 0 && _gameState!.player.y < 8) {
+    if (_gameState!.player.y >= 0 && _gameState!.player.y < GameState.ROWS) {
       _gameState!.grid[_gameState!.player.x][_gameState!.player.y] = GridCell(type: CellType.boxOpen, isOpened: true);
     }
     notifyListeners();
@@ -144,7 +219,7 @@ class GameProvider with ChangeNotifier {
     if (_gameState == null) return;
     int x = _gameState!.player.x;
     int y = _gameState!.player.y;
-    if (x < 0 || x >= 5 || y < 0 || y >= 8) return;
+    if (x < 0 || x >= GameState.COLS || y < 0 || y >= GameState.ROWS) return;
     var cell = _gameState!.grid[x][y];
     if (!(cell.type == CellType.boxOpen && cell.isOpened)) {
       _gameState!.grid[x][y] = GridCell(type: CellType.boxOpen, isOpened: true);
@@ -175,7 +250,7 @@ class GameProvider with ChangeNotifier {
     if (_gameState!.player.steps <= 0 || _gameState!.player.health <= 0) return false;
     int newX = _gameState!.player.x + dx;
     int newY = _gameState!.player.y + dy;
-    if (newX < 0 || newX >= 5 || newY < 0 || newY >= 8) return false;
+    if (newX < 0 || newX >= GameState.COLS || newY < 0 || newY >= GameState.ROWS) return false;
     return true;
   }
 

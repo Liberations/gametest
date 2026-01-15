@@ -25,5 +25,6 @@ class Assets {
   static const String screensAboutScreen = 'lib/screens/about_screen.dart';
   static const String screensGameScreen = 'lib/screens/game_screen.dart';
   static const String screensLeaderboardScreen = 'lib/screens/leaderboard_screen.dart';
+  static const String screensSettingsScreen = 'lib/screens/settings_screen.dart';
 
 }

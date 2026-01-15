@@ -6,6 +6,9 @@ import 'player.dart';
 
 class GameState {
   int level;
+  // grid dimensions: 5 columns x ROWS rows
+  static const int COLS = 5;
+  static const int ROWS = 5;
   List<List<GridCell>> grid; // 5x8
   Player player;
   List<String> obtainedGifts; // list of gift ids
@@ -23,16 +26,16 @@ class GameState {
     // Example gift ids we may pick from (match UI mapping)
     List<String> giftIds = ['gift_1', 'gift_2', 'gift_3'];
 
-    List<List<GridCell>> newGrid = List.generate(5, (i) => List.generate(8, (j) => GridCell(type: CellType.box1, isOpened: false)));
+    List<List<GridCell>> newGrid = List.generate(COLS, (i) => List.generate(ROWS, (j) => GridCell(type: CellType.box1, isOpened: false)));
 
     // Place exactly one door at a random position
-    int doorX = rand.nextInt(5);
-    int doorY = rand.nextInt(8);
+    int doorX = rand.nextInt(COLS);
+    int doorY = rand.nextInt(ROWS);
     newGrid[doorX][doorY] = GridCell(type: CellType.door, isOpened: false);
 
     // Fill other cells with probabilistic contents
-    for (int i = 0; i < 5; i++) {
-      for (int j = 0; j < 8; j++) {
+    for (int i = 0; i < COLS; i++) {
+      for (int j = 0; j < ROWS; j++) {
         if (i == doorX && j == doorY) continue;
         double r = rand.nextDouble();
         if (r < 0.15) {
@@ -85,10 +88,10 @@ class GameState {
     List<String>? gridData = prefs.getStringList('grid');
     if (gridData == null) return null;
     List<List<GridCell>> grid = [];
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < COLS; i++) {
       List<GridCell> col = [];
-      for (int j = 0; j < 8; j++) {
-        String cellStr = gridData[i * 8 + j];
+      for (int j = 0; j < ROWS; j++) {
+        String cellStr = gridData[i * ROWS + j];
         List<String> parts = cellStr.split(',');
         CellType type = CellType.values[int.parse(parts[0])];
         bool opened = parts[1] == '1';
@@ -100,8 +103,8 @@ class GameState {
     List<String> gifts = prefs.getStringList('gifts') ?? [];
 
     // Clamp loaded player coordinates
-    if (player.x < 0 || player.x >= 5) player.x = 2;
-    if (player.y < 0 || player.y >= 8) player.y = 0;
+    if (player.x < 0 || player.x >= COLS) player.x = (COLS/2).floor();
+    if (player.y < 0 || player.y >= ROWS) player.y = 0;
     // Ensure starting cell is an opened empty box
     grid[player.x][player.y] = GridCell(type: CellType.boxOpen, isOpened: true);
 
