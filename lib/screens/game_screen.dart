@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
 import '../models/grid_cell.dart';
 import 'leaderboard_screen.dart';
+import 'package:flutter/services.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -30,6 +31,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
   // keys for bottom gift slots to compute precise target coords
   final List<GlobalKey> _giftSlotKeys = [];
 
+  // Gesture handling state for web/desktop: accumulate pan deltas and lock per gesture
+  double _panAccumDx = 0.0;
+  double _panAccumDy = 0.0;
+  bool _gestureLocked = false; // prevent multiple moves per swipe
+
+  // Keyboard focus for desktop/web arrow keys
+  late FocusNode _focusNode;
+
   void _ensureGiftSlotKeys(int count) {
     if (_giftSlotKeys.length < count) {
       for (int i = _giftSlotKeys.length; i < count; i++) {
@@ -45,6 +54,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<GameProvider>().initializeGame();
+    });
+    _focusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
     });
     WidgetsBinding.instance.addObserver(this);
     _flyController = AnimationController(vsync: this, duration: Duration(milliseconds: 600));
@@ -67,6 +80,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _focusNode.dispose();
     _flyController?.dispose();
     super.dispose();
   }
@@ -204,185 +218,217 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
+    return RawKeyboardListener(
+      focusNode: _focusNode,
+      onKey: (RawKeyEvent event) {
+        if (event is RawKeyDownEvent) {
+          final data = event.logicalKey;
+          if (data == LogicalKeyboardKey.arrowLeft) {
+            _move(-1, 0);
+          } else if (data == LogicalKeyboardKey.arrowRight) {
+            _move(1, 0);
+          } else if (data == LogicalKeyboardKey.arrowUp) {
+            _move(0, -1);
+          } else if (data == LogicalKeyboardKey.arrowDown) {
+            _move(0, 1);
+          }
+        }
+      },
+      child: Scaffold(
         backgroundColor: Colors.black,
-        elevation: 0,
-        title: Text('Gift Game', style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.leaderboard, color: Colors.white),
-            tooltip: 'Leaderboard',
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => LeaderboardScreen()));
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.directions_walk, color: Colors.white),
-            tooltip: 'Add steps',
-            onPressed: () => context.read<GameProvider>().rechargeSteps(),
-          ),
-          IconButton(
-            icon: Icon(Icons.favorite, color: Colors.white),
-            tooltip: 'Add health',
-            onPressed: () => context.read<GameProvider>().rechargeHealth(),
-          ),
-          IconButton(
-            icon: Icon(Icons.exit_to_app, color: Colors.white),
-            tooltip: 'End game',
-            onPressed: () => context.read<GameProvider>().endGame(),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Consumer<GameProvider>(
-          builder: (context, provider, child) {
-            if (provider.gameState == null) {
-              return Center(child: CircularProgressIndicator());
-            }
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          elevation: 0,
+          title: Text('Gift Game', style: TextStyle(color: Colors.white)),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.leaderboard, color: Colors.white),
+              tooltip: 'Leaderboard',
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => LeaderboardScreen()));
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.directions_walk, color: Colors.white),
+              tooltip: 'Add steps',
+              onPressed: () => context.read<GameProvider>().rechargeSteps(),
+            ),
+            IconButton(
+              icon: Icon(Icons.favorite, color: Colors.white),
+              tooltip: 'Add health',
+              onPressed: () => context.read<GameProvider>().rechargeHealth(),
+            ),
+            IconButton(
+              icon: Icon(Icons.exit_to_app, color: Colors.white),
+              tooltip: 'End game',
+              onPressed: () => context.read<GameProvider>().endGame(),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Consumer<GameProvider>(
+            builder: (context, provider, child) {
+              if (provider.gameState == null) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-            return Column(
-              children: [
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // compute actual grid area size inside Expanded
-                      double gridWidth = constraints.maxWidth;
-                      double gridHeight = constraints.maxHeight;
-                      double cellWidth = gridWidth / 5;
-                      double cellHeight = gridHeight / 8;
+              return Column(
+                children: [
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        // compute actual grid area size inside Expanded
+                        double gridWidth = constraints.maxWidth;
+                        double gridHeight = constraints.maxHeight;
+                        double cellWidth = gridWidth / 5;
+                        double cellHeight = gridHeight / 8;
 
-                      // save sizes for immediate animation triggering after moves
-                      _cellWidth = cellWidth;
-                      _cellHeight = cellHeight;
+                        // save sizes for immediate animation triggering after moves
+                        _cellWidth = cellWidth;
+                        _cellHeight = cellHeight;
 
-                      return GestureDetector(
-                        onPanEnd: (details) {
-                          double velocityX = details.velocity.pixelsPerSecond.dx;
-                          double velocityY = details.velocity.pixelsPerSecond.dy;
-                          if (velocityX.abs() > velocityY.abs()) {
-                            if (velocityX > 0) {
-                              _move(1, 0);
-                            } else {
-                              _move(-1, 0);
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onPanStart: (details) {
+                            _panAccumDx = 0.0;
+                            _panAccumDy = 0.0;
+                            _gestureLocked = false;
+                          },
+                          onPanUpdate: (details) {
+                            if (_gestureLocked) return;
+                            _panAccumDx += details.delta.dx;
+                            _panAccumDy += details.delta.dy;
+                            double adx = _panAccumDx.abs();
+                            double ady = _panAccumDy.abs();
+                            const threshold = 20; // pixels to register a swipe
+                            if (adx > ady && adx > threshold) {
+                              if (_panAccumDx > 0) {
+                                _move(1, 0);
+                              } else {
+                                _move(-1, 0);
+                              }
+                              _gestureLocked = true;
+                            } else if (ady > adx && ady > threshold) {
+                              if (_panAccumDy > 0) {
+                                _move(0, 1);
+                              } else {
+                                _move(0, -1);
+                              }
+                              _gestureLocked = true;
                             }
-                          } else {
-                            if (velocityY > 0) {
-                              _move(0, 1);
-                            } else {
-                              _move(0, -1);
-                            }
-                          }
-                        },
-                        onTap: () {},
-                        onTapDown: (_) {},
-                        child: Stack(
-                          key: _gridKey,
-                          children: [
-                            GridView.builder(
-                              physics: NeverScrollableScrollPhysics(),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 5,
-                                childAspectRatio: 1,
-                              ),
-                              itemCount: 40, // 5*8
-                              itemBuilder: (context, index) {
-                                int x = index % 5;
-                                int y = index ~/ 5;
-                                GridCell cell = provider.gameState!.grid[x][y];
-                                bool showOpenBase = cell.isOpened;
-                                return Container(
-                                  key: ValueKey('cell_${x}_${y}_${cell.isOpened}'),
-                                  margin: EdgeInsets.all(2),
-                                  child: showOpenBase
-                                      ? Stack(
-                                          alignment: Alignment.center,
-                                          children: [
-                                            Image.asset('lib/assets/ic_box_open.webp'),
-                                            if (cell.isOpened && _getContentImage(cell).isNotEmpty)
-                                              Image.asset(_getContentImage(cell)),
-                                          ],
-                                        )
-                                      : Image.asset('lib/assets/ic_box1.webp'),
-                                );
-                              },
-                            ),
-                            // Player: centered in cell using actual cell dimensions
-                            Positioned(
-                              left: provider.gameState!.player.x * cellWidth + (cellWidth - 50) / 2,
-                              top: provider.gameState!.player.y * cellHeight + (cellHeight - 50) / 2,
-                              child: Image.asset('lib/assets/ic_mine.webp', width: 50, height: 50),
-                            ),
-                            // Flying gift animation, compute positions relative to grid area
-                            if (_animatingGiftAsset != null && _startOffset != null && _endOffset != null)
-                              AnimatedBuilder(
-                                animation: _flyController!,
-                                builder: (context, child) {
-                                  double t = _flyController!.value;
-                                  double x = _startOffset!.dx + (_endOffset!.dx - _startOffset!.dx) * Curves.easeInOut.transform(t);
-                                  double y = _startOffset!.dy + (_endOffset!.dy - _startOffset!.dy) * Curves.easeInOut.transform(t);
-                                  return Positioned(
-                                    left: x,
-                                    top: y,
-                                    child: Opacity(
-                                      opacity: 1.0 - t,
-                                      child: Image.asset(_animatingGiftAsset!, width: 40, height: 40),
+                          },
+                          onPanEnd: (details) {
+                            // Reset accumulators for next gesture
+                            _panAccumDx = 0.0;
+                            _panAccumDy = 0.0;
+                            _gestureLocked = false;
+                          },
+                          onTap: () {},
+                          onTapDown: (_) {},
+                          child: Stack(
+                            key: _gridKey,
+                            children: [
+                              GridView.builder(
+                                physics: NeverScrollableScrollPhysics(),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 5,
+                                  childAspectRatio: 1,
+                                ),
+                                itemCount: 40, // 5*8
+                                itemBuilder: (context, index) {
+                                  int x = index % 5;
+                                  int y = index ~/ 5;
+                                  GridCell cell = provider.gameState!.grid[x][y];
+                                  bool showOpenBase = cell.isOpened;
+                                  final bool isPlayerHere = (provider.gameState!.player.x == x && provider.gameState!.player.y == y);
+                                  return Container(
+                                    key: ValueKey('cell_${x}_${y}_${cell.isOpened}'),
+                                    margin: EdgeInsets.all(2),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        // base image depends on open/closed
+                                        Image.asset(showOpenBase ? 'lib/assets/ic_box_open.webp' : 'lib/assets/ic_box1.webp'),
+                                        // cell content (gift/door/monster)
+                                        if (cell.isOpened && _getContentImage(cell).isNotEmpty) Image.asset(_getContentImage(cell)),
+                                        // player centered inside the same cell when coordinates match
+                                        if (isPlayerHere)
+                                          Image.asset('lib/assets/ic_mine.webp', width: 50, height: 50),
+                                      ],
                                     ),
                                   );
                                 },
                               ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Container(
-                  height: 100,
-                  color: Colors.black,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Builder(builder: (context) {
-                          // ensure we have keys for each obtained gift slot
-                          _ensureGiftSlotKeys(provider.gameState!.obtainedGifts.length);
-                          return ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: provider.gameState!.obtainedGifts.length,
-                            itemBuilder: (context, index) {
-                              String id = provider.gameState!.obtainedGifts[index];
-                              return Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 4),
-                                child: Container(
-                                  key: _giftSlotKeys[index],
-                                  width: 50,
-                                  height: 50,
-                                  child: Image.asset(_giftIdToAsset(id), width: 50),
+                              // Flying gift animation, compute positions relative to grid area
+                              if (_animatingGiftAsset != null && _startOffset != null && _endOffset != null)
+                                AnimatedBuilder(
+                                  animation: _flyController!,
+                                  builder: (context, child) {
+                                    double t = _flyController!.value;
+                                    double x = _startOffset!.dx + (_endOffset!.dx - _startOffset!.dx) * Curves.easeInOut.transform(t);
+                                    double y = _startOffset!.dy + (_endOffset!.dy - _startOffset!.dy) * Curves.easeInOut.transform(t);
+                                    return Positioned(
+                                      left: x,
+                                      top: y,
+                                      child: Opacity(
+                                        opacity: 1.0 - t,
+                                        child: Image.asset(_animatingGiftAsset!, width: 40, height: 40),
+                                      ),
+                                    );
+                                  },
                                 ),
-                              );
-                            },
-                          );
-                        }),
-                      ),
-                      DefaultTextStyle(
-                        style: TextStyle(color: Colors.white),
-                        child: Row(
-                          children: [
-                            Text('Steps: ${provider.gameState!.player.steps}'),
-                            SizedBox(width: 10),
-                            Text('Level: ${provider.gameState!.level}'),
-                            SizedBox(width: 10),
-                            Text('Health: ${provider.gameState!.player.health}'),
-                          ],
-                        ),
-                      ),
-                    ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                  Container(
+                    height: 100,
+                    color: Colors.black,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Builder(builder: (context) {
+                            // ensure we have keys for each obtained gift slot
+                            _ensureGiftSlotKeys(provider.gameState!.obtainedGifts.length);
+                            return ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: provider.gameState!.obtainedGifts.length,
+                              itemBuilder: (context, index) {
+                                String id = provider.gameState!.obtainedGifts[index];
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 4),
+                                  child: Container(
+                                    key: _giftSlotKeys[index],
+                                    width: 50,
+                                    height: 50,
+                                    child: Image.asset(_giftIdToAsset(id), width: 50),
+                                  ),
+                                );
+                              },
+                            );
+                          }),
+                        ),
+                        DefaultTextStyle(
+                          style: TextStyle(color: Colors.white),
+                          child: Row(
+                            children: [
+                              Text('Steps: ${provider.gameState!.player.steps}'),
+                              SizedBox(width: 10),
+                              Text('Level: ${provider.gameState!.level}'),
+                              SizedBox(width: 10),
+                              Text('Health: ${provider.gameState!.player.health}'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
