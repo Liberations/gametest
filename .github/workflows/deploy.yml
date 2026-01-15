@@ -21,12 +21,15 @@ jobs:
         with:
           flutter-version: '3.32.4'
 
+      - name: Show Flutter version
+        run: flutter --version
+
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build web (HTML renderer, release)
+      - name: Build web (release)
         run: |
-          flutter build web --release --web-renderer html --base-href /gametest/
+          flutter build web --release --base-href /gametest/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
