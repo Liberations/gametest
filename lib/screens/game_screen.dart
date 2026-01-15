@@ -326,7 +326,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
                                   if (_gestureLocked) return;
                                   double adx = _panAccumDx.abs();
                                   double ady = _panAccumDy.abs();
-                                  const threshold = 20; // pixels to register a swipe
+                                  // Make web swipes more sensitive by lowering threshold; keep desktop a bit stricter
+                                  double threshold = kIsWeb ? 8.0 : 20.0;
                                   if (adx > ady && adx > threshold) {
                                     if (_panAccumDx > 0) _move(1, 0); else _move(-1, 0);
                                     _gestureLocked = true;
@@ -337,6 +338,23 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
                                 }
                               },
                               onPanEnd: (details) {
+                                // Velocity-based fling detection (improves responsiveness on web/touchpad)
+                                try {
+                                  final vx = details.velocity.pixelsPerSecond.dx;
+                                  final vy = details.velocity.pixelsPerSecond.dy;
+                                  final vAbs = Offset(vx, vy).distance;
+                                  const flingThreshold = 600; // px/s
+                                  if (!_gestureLocked && vAbs > flingThreshold) {
+                                    if (vx.abs() > vy.abs()) {
+                                      if (vx > 0) _move(1, 0); else _move(-1, 0);
+                                    } else {
+                                      if (vy > 0) _move(0, 1); else _move(0, -1);
+                                    }
+                                  }
+                                } catch (e) {
+                                  // ignore if velocity not available
+                                }
+                                // Reset for next gesture
                                 _panAccumDx = 0.0;
                                 _panAccumDy = 0.0;
                                 _gestureLocked = false;
