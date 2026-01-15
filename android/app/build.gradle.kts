@@ -30,11 +30,26 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("keyStore") {
+            keyAlias = "upload"
+            keyPassword = "android"
+            storeFile = file("..\\cert\\keystore.jks")
+            storePassword = "android"
+        }
+    }
+
+
     buildTypes {
+        debug {
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.getByName("keyStore")
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("keyStore")
         }
     }
 }
