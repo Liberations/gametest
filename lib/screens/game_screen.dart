@@ -165,7 +165,7 @@ class _GameScreenState extends State<GameScreen>
 
       // compute global start position using grid key
       RenderBox? gridBox =
-          _gridKey.currentContext?.findRenderObject() as RenderBox?;
+      _gridKey.currentContext?.findRenderObject() as RenderBox?;
       Offset gridOrigin = Offset.zero;
       if (gridBox != null) {
         gridOrigin = gridBox.localToGlobal(Offset.zero);
@@ -179,11 +179,11 @@ class _GameScreenState extends State<GameScreen>
       // target slot is last obtained gift
       int targetIndex =
           (context.read<GameProvider>().gameState?.obtainedGifts.length ?? 1) -
-          1;
+              1;
       if (targetIndex >= 0 && targetIndex < _giftSlotKeys.length) {
         final slotKey = _giftSlotKeys[targetIndex];
         RenderBox? slotBox =
-            slotKey.currentContext?.findRenderObject() as RenderBox?;
+        slotKey.currentContext?.findRenderObject() as RenderBox?;
         if (slotBox != null) {
           Offset slotOrigin = slotBox.localToGlobal(Offset.zero);
           endGlobalX = slotOrigin.dx + (slotBox.size.width - 40) / 2;
@@ -202,10 +202,10 @@ class _GameScreenState extends State<GameScreen>
           final t = _flyController?.value ?? 0.0;
           final x =
               startGlobal.dx +
-              (endGlobalX - startGlobal.dx) * Curves.easeInOut.transform(t);
+                  (endGlobalX - startGlobal.dx) * Curves.easeInOut.transform(t);
           final y =
               startGlobal.dy +
-              (endGlobalY - startGlobal.dy) * Curves.easeInOut.transform(t);
+                  (endGlobalY - startGlobal.dy) * Curves.easeInOut.transform(t);
           return Positioned(
             left: x,
             top: y,
@@ -388,7 +388,7 @@ class _GameScreenState extends State<GameScreen>
                                   _panAccumDy += details.delta.dy;
                                   final bool isMobileViewport =
                                       !kIsWeb ||
-                                      MediaQuery.of(context).size.width <= 720;
+                                          MediaQuery.of(context).size.width <= 720;
                                   if (isMobileViewport) {
                                     // Use cell sizes to determine how many cells to move per accumulated delta
                                     double moveX = _panAccumDx;
@@ -403,9 +403,9 @@ class _GameScreenState extends State<GameScreen>
                                         _move(dir, 0);
                                       _panAccumDx =
                                           moveX -
-                                          steps *
-                                              _cellWidth! *
-                                              (moveX > 0 ? 1 : -1);
+                                              steps *
+                                                  _cellWidth! *
+                                                  (moveX > 0 ? 1 : -1);
                                     }
                                     if (_cellHeight != null &&
                                         _cellHeight! > 0 &&
@@ -417,9 +417,9 @@ class _GameScreenState extends State<GameScreen>
                                         _move(0, dir);
                                       _panAccumDy =
                                           moveY -
-                                          steps *
-                                              _cellHeight! *
-                                              (moveY > 0 ? 1 : -1);
+                                              steps *
+                                                  _cellHeight! *
+                                                  (moveY > 0 ? 1 : -1);
                                     }
                                   } else {
                                     if (_gestureLocked) return;
@@ -508,20 +508,20 @@ class _GameScreenState extends State<GameScreen>
                                     GridView.builder(
                                       physics: NeverScrollableScrollPhysics(),
                                       gridDelegate:
-                                          SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: GameState.COLS,
-                                            childAspectRatio: 1,
-                                          ),
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: GameState.COLS,
+                                        childAspectRatio: 1,
+                                      ),
                                       itemCount: GameState.COLS * GameState.ROWS,
                                       itemBuilder: (context, index) {
                                         int x = index % GameState.COLS;
                                         int y = index ~/ GameState.COLS;
                                         GridCell cell =
-                                            provider.gameState!.grid[x][y];
+                                        provider.gameState!.grid[x][y];
                                         bool showOpenBase = cell.isOpened;
                                         bool isPlayerHere =
-                                            (provider.gameState!.player.x ==
-                                                x &&
+                                        (provider.gameState!.player.x ==
+                                            x &&
                                             provider.gameState!.player.y == y);
                                         return Container(
                                           key: ValueKey(
@@ -577,25 +577,23 @@ class _GameScreenState extends State<GameScreen>
                                     Positioned(
                                       left: 0,
                                       right: 0,
-                                      bottom: 12,
+                                      bottom: 5,
                                       child: Center(
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             _dirButton(Icons.keyboard_arrow_up, 0, -1),
-                                            SizedBox(height: 10),
+                                            SizedBox(height: 5),
                                             Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 _dirButton(Icons.keyboard_arrow_left, -1, 0),
-                                                SizedBox(width: 12),
                                                 // spacer to keep left/right aligned
-                                                SizedBox(width: 72, height: 72),
-                                                SizedBox(width: 12),
+                                                SizedBox(width: 35, height: 35),
                                                 _dirButton(Icons.keyboard_arrow_right, 1, 0),
                                               ],
                                             ),
-                                            SizedBox(height: 10),
+                                            SizedBox(height: 5),
                                             _dirButton(Icons.keyboard_arrow_down, 0, 1),
                                           ],
                                         ),
@@ -611,7 +609,7 @@ class _GameScreenState extends State<GameScreen>
                     ),
                   ),
                   Container(
-                    height: 100,
+                    height: 60,
                     color: Colors.black,
                     child: Row(
                       children: [
@@ -625,10 +623,10 @@ class _GameScreenState extends State<GameScreen>
                               return ListView.builder(
                                 scrollDirection: Axis.horizontal,
                                 itemCount:
-                                    provider.gameState!.obtainedGifts.length,
+                                provider.gameState!.obtainedGifts.length,
                                 itemBuilder: (context, index) {
                                   String id =
-                                      provider.gameState!.obtainedGifts[index];
+                                  provider.gameState!.obtainedGifts[index];
                                   return Padding(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: 4,
@@ -772,7 +770,7 @@ class _GameScreenState extends State<GameScreen>
       case CellType.door:
         return 'lib/assets/ic_door.webp';
       case CellType.gift:
-        // If gift has a contentId, map it
+      // If gift has a contentId, map it
         if (cell.contentId != null) {
           return _giftIdToAsset(cell.contentId!);
         }
