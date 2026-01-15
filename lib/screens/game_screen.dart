@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'dart:math';
 import 'about_screen.dart';
 import 'settings_screen.dart';
+import 'dart:async';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -51,22 +52,46 @@ class _GameScreenState extends State<GameScreen>
   // track last pointer kind (touch/mouse) to tune sensitivity on web
   PointerDeviceKind? _lastPointerKind;
 
+  // Press-and-hold directional repeat support
+  Timer? _dirHoldTimer;
+  final Duration _dirHoldInitialDelay = Duration(milliseconds: 150);
+  final Duration _dirHoldRepeat = Duration(milliseconds: 120);
+
+  void _startHoldMove(int dx, int dy) {
+    // Cancel any previous timer
+    _dirHoldTimer?.cancel();
+    // Immediate single move for responsive feel
+    _move(dx, dy);
+    // After initial delay, start periodic moves
+    _dirHoldTimer = Timer(_dirHoldInitialDelay, () {
+      _dirHoldTimer = Timer.periodic(_dirHoldRepeat, (_) {
+        _move(dx, dy);
+      });
+    });
+  }
+
+  void _endHoldMove() {
+    _dirHoldTimer?.cancel();
+    _dirHoldTimer = null;
+  }
+
   // helper to build a square directional button with ripple feedback
-  Widget _dirButton(IconData icon, int dx, int dy) {
-    return Material(
-      color: Colors.white12,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        splashColor: Colors.white24,
-        highlightColor: Colors.white10,
-        onTap: () => _move(dx, dy),
-        child: SizedBox(
-          width: 35,
-          height: 35,
-          child: Center(
-            child: Icon(icon, color: Colors.white, size: 36),
-          ),
+  Widget _dirButton(IconData icon, int dx, int dy, {double size = 64}) {
+    // Larger circular button with press-and-hold repeat behavior
+    return GestureDetector(
+      onTapDown: (_) => _startHoldMove(dx, dy),
+      onTapUp: (_) => _endHoldMove(),
+      onTapCancel: _endHoldMove,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Colors.white12,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Icon(icon, color: Colors.white, size: size * 0.45),
         ),
       ),
     );
@@ -117,6 +142,8 @@ class _GameScreenState extends State<GameScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _focusNode.dispose();
+    // ensure any active hold timer is cancelled
+    _endHoldMove();
     _flyController?.dispose();
     super.dispose();
   }
@@ -274,19 +301,19 @@ class _GameScreenState extends State<GameScreen>
     final bool forceMobileLayout = kIsWeb && screenW > 720;
 
     void _handleKey(KeyEvent event) {
-      if (forceMobileLayout)
-        return; // ignore keyboard when forcing mobile layout
+      // Only handle key down events to avoid duplicates
       if (event is KeyDownEvent) {
         final key = event.logicalKey;
-        if (key == LogicalKeyboardKey.arrowLeft) _move(-1, 0);
-        if (key == LogicalKeyboardKey.arrowRight) _move(1, 0);
-        if (key == LogicalKeyboardKey.arrowUp) _move(0, -1);
-        if (key == LogicalKeyboardKey.arrowDown) _move(0, 1);
+        if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.keyA) _move(-1, 0);
+        if (key == LogicalKeyboardKey.arrowRight || key == LogicalKeyboardKey.keyD) _move(1, 0);
+        if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.keyW) _move(0, -1);
+        if (key == LogicalKeyboardKey.arrowDown || key == LogicalKeyboardKey.keyS) _move(0, 1);
       }
     }
 
     return KeyboardListener(
       focusNode: _focusNode,
+      autofocus: true,
       onKeyEvent: _handleKey,
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -544,11 +571,7 @@ class _GameScreenState extends State<GameScreen>
                                                   _getContentImage(cell),
                                                 ),
                                               if (isPlayerHere)
-                                                Image.asset(
-                                                  'lib/assets/ic_mine.webp',
-                                                  width: 50,
-                                                  height: 50,
-                                                ),
+                                                _buildPlayerAvatar(provider),
                                             ],
                                           ),
                                         );
@@ -579,23 +602,33 @@ class _GameScreenState extends State<GameScreen>
                                       right: 0,
                                       bottom: 5,
                                       child: Center(
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            _dirButton(Icons.keyboard_arrow_up, 0, -1),
-                                            SizedBox(height: 5),
-                                            Row(
+                                        child: LayoutBuilder(
+                                          builder: (ctx, ctrlConstraints) {
+                                            // compute button size so controls scale on small screens
+                                            double buttonSize = (effectiveGridWidth * 0.12).clamp(40.0, 64.0);
+                                            // also ensure it fits vertically if the grid area is short
+                                            double maxByHeight = (maxH * 0.12).clamp(36.0, 64.0);
+                                            buttonSize = min(buttonSize, maxByHeight);
+
+                                            return Column(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                _dirButton(Icons.keyboard_arrow_left, -1, 0),
-                                                // spacer to keep left/right aligned
-                                                SizedBox(width: 35, height: 35),
-                                                _dirButton(Icons.keyboard_arrow_right, 1, 0),
+                                                _dirButton(Icons.keyboard_arrow_up, 0, -1, size: buttonSize),
+                                                SizedBox(height: max(6.0, buttonSize * 0.08)),
+                                                Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    _dirButton(Icons.keyboard_arrow_left, -1, 0, size: buttonSize),
+                                                    // spacer scaled with button size
+                                                    SizedBox(width: max(12.0, buttonSize * 0.6), height: buttonSize),
+                                                    _dirButton(Icons.keyboard_arrow_right, 1, 0, size: buttonSize),
+                                                  ],
+                                                ),
+                                                SizedBox(height: max(6.0, buttonSize * 0.08)),
+                                                _dirButton(Icons.keyboard_arrow_down, 0, 1, size: buttonSize),
                                               ],
-                                            ),
-                                            SizedBox(height: 5),
-                                            _dirButton(Icons.keyboard_arrow_down, 0, 1),
-                                          ],
+                                            );
+                                          },
                                         ),
                                       ),
                                     ),
@@ -609,7 +642,7 @@ class _GameScreenState extends State<GameScreen>
                     ),
                   ),
                   Container(
-                    height: 60,
+                    height: 35,
                     color: Colors.black,
                     child: Row(
                       children: [
@@ -633,11 +666,11 @@ class _GameScreenState extends State<GameScreen>
                                     ),
                                     child: Container(
                                       key: _giftSlotKeys[index],
-                                      width: 50,
-                                      height: 50,
+                                      width: 35,
+                                      height: 35,
                                       child: Image.asset(
                                         _giftIdToAsset(id),
-                                        width: 50,
+                                        width: 35,
                                       ),
                                     ),
                                   );
@@ -678,7 +711,11 @@ class _GameScreenState extends State<GameScreen>
     var provider = context.read<GameProvider>();
     // Prevent movement when player has no steps or health
     if (!provider.canMove(dx, dy)) {
-      _showRechargeDialog();
+      // Only show recharge dialog when the reason is zero steps or zero health.
+      final gs = provider.gameState;
+      if (gs != null && (gs.player.steps <= 0 || gs.player.health <= 0)) {
+        _showRechargeDialog();
+      }
       return;
     }
     List<CellType> opened = provider.movePlayer(dx, dy);
@@ -761,6 +798,50 @@ class _GameScreenState extends State<GameScreen>
           ],
         );
       },
+    );
+  }
+
+  // Build player avatar widget - use network avatar if available, otherwise fallback to local asset
+  Widget _buildPlayerAvatar(GameProvider provider) {
+    final avatarUrl = provider.userAvatar;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          avatarUrl,
+          width: 50,
+          height: 50,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            // Fallback to local image on error
+            return Image.asset(
+              'lib/assets/ic_mine.webp',
+              width: 50,
+              height: 50,
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return SizedBox(
+              width: 50,
+              height: 50,
+              child: Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+    // Fallback to local asset
+    return Image.asset(
+      'lib/assets/ic_mine.webp',
+      width: 50,
+      height: 50,
     );
   }
 

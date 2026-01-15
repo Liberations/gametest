@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'grid_cell.dart';
 import 'player.dart';
@@ -7,7 +8,7 @@ import 'player.dart';
 class GameState {
   int level;
   // grid dimensions: 5 columns x ROWS rows
-  static const int COLS = 5;
+  static const int COLS = 8;
   static const int ROWS = 5;
   List<List<GridCell>> grid; // 5x8
   Player player;
