@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
 import '../models/grid_cell.dart';
 import 'leaderboard_screen.dart';
 import 'package:flutter/services.dart';
+import 'dart:math';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -218,22 +221,23 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
 
   @override
   Widget build(BuildContext context) {
-    return RawKeyboardListener(
+    final double screenW = MediaQuery.of(context).size.width;
+    final bool forceMobileLayout = kIsWeb && screenW > 720;
+
+    void _handleKey(KeyEvent event) {
+      if (forceMobileLayout) return; // ignore keyboard when forcing mobile layout
+      if (event is KeyDownEvent) {
+        final key = event.logicalKey;
+        if (key == LogicalKeyboardKey.arrowLeft) _move(-1, 0);
+        if (key == LogicalKeyboardKey.arrowRight) _move(1, 0);
+        if (key == LogicalKeyboardKey.arrowUp) _move(0, -1);
+        if (key == LogicalKeyboardKey.arrowDown) _move(0, 1);
+      }
+    }
+
+    return KeyboardListener(
       focusNode: _focusNode,
-      onKey: (RawKeyEvent event) {
-        if (event is RawKeyDownEvent) {
-          final data = event.logicalKey;
-          if (data == LogicalKeyboardKey.arrowLeft) {
-            _move(-1, 0);
-          } else if (data == LogicalKeyboardKey.arrowRight) {
-            _move(1, 0);
-          } else if (data == LogicalKeyboardKey.arrowUp) {
-            _move(0, -1);
-          } else if (data == LogicalKeyboardKey.arrowDown) {
-            _move(0, 1);
-          }
-        }
-      },
+      onKeyEvent: _handleKey,
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
@@ -268,116 +272,128 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Si
         body: SafeArea(
           child: Consumer<GameProvider>(
             builder: (context, provider, child) {
-              if (provider.gameState == null) {
-                return Center(child: CircularProgressIndicator());
-              }
+              if (provider.gameState == null) return Center(child: CircularProgressIndicator());
 
               return Column(
                 children: [
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        // compute actual grid area size inside Expanded
-                        double gridWidth = constraints.maxWidth;
-                        double gridHeight = constraints.maxHeight;
-                        double cellWidth = gridWidth / 5;
-                        double cellHeight = gridHeight / 8;
+                        double maxW = constraints.maxWidth;
+                        double maxH = constraints.maxHeight;
+                        double effectiveGridWidth = forceMobileLayout ? min(maxW, 420) : maxW;
+                        double cellWidth = effectiveGridWidth / 5;
+                        double cellHeight = maxH / 8;
 
-                        // save sizes for immediate animation triggering after moves
                         _cellWidth = cellWidth;
                         _cellHeight = cellHeight;
 
-                        return GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onPanStart: (details) {
-                            _panAccumDx = 0.0;
-                            _panAccumDy = 0.0;
-                            _gestureLocked = false;
-                          },
-                          onPanUpdate: (details) {
-                            if (_gestureLocked) return;
-                            _panAccumDx += details.delta.dx;
-                            _panAccumDy += details.delta.dy;
-                            double adx = _panAccumDx.abs();
-                            double ady = _panAccumDy.abs();
-                            const threshold = 20; // pixels to register a swipe
-                            if (adx > ady && adx > threshold) {
-                              if (_panAccumDx > 0) {
-                                _move(1, 0);
-                              } else {
-                                _move(-1, 0);
-                              }
-                              _gestureLocked = true;
-                            } else if (ady > adx && ady > threshold) {
-                              if (_panAccumDy > 0) {
-                                _move(0, 1);
-                              } else {
-                                _move(0, -1);
-                              }
-                              _gestureLocked = true;
-                            }
-                          },
-                          onPanEnd: (details) {
-                            // Reset accumulators for next gesture
-                            _panAccumDx = 0.0;
-                            _panAccumDy = 0.0;
-                            _gestureLocked = false;
-                          },
-                          onTap: () {},
-                          onTapDown: (_) {},
-                          child: Stack(
-                            key: _gridKey,
-                            children: [
-                              GridView.builder(
-                                physics: NeverScrollableScrollPhysics(),
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 5,
-                                  childAspectRatio: 1,
-                                ),
-                                itemCount: 40, // 5*8
-                                itemBuilder: (context, index) {
-                                  int x = index % 5;
-                                  int y = index ~/ 5;
-                                  GridCell cell = provider.gameState!.grid[x][y];
-                                  bool showOpenBase = cell.isOpened;
-                                  final bool isPlayerHere = (provider.gameState!.player.x == x && provider.gameState!.player.y == y);
-                                  return Container(
-                                    key: ValueKey('cell_${x}_${y}_${cell.isOpened}'),
-                                    margin: EdgeInsets.all(2),
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        // base image depends on open/closed
-                                        Image.asset(showOpenBase ? 'lib/assets/ic_box_open.webp' : 'lib/assets/ic_box1.webp'),
-                                        // cell content (gift/door/monster)
-                                        if (cell.isOpened && _getContentImage(cell).isNotEmpty) Image.asset(_getContentImage(cell)),
-                                        // player centered inside the same cell when coordinates match
-                                        if (isPlayerHere)
-                                          Image.asset('lib/assets/ic_mine.webp', width: 50, height: 50),
-                                      ],
+                        return Center(
+                          child: SizedBox(
+                            width: effectiveGridWidth,
+                            height: maxH,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              dragStartBehavior: DragStartBehavior.start,
+                              onPanStart: (details) {
+                                _panAccumDx = 0.0;
+                                _panAccumDy = 0.0;
+                                _gestureLocked = false;
+                                // ensure focus so keyboard works when appropriate
+                                if (!forceMobileLayout) _focusNode.requestFocus();
+                              },
+                              onPanUpdate: (details) {
+                                _panAccumDx += details.delta.dx;
+                                _panAccumDy += details.delta.dy;
+                                final bool isMobileViewport = !kIsWeb || MediaQuery.of(context).size.width <= 720;
+                                if (isMobileViewport) {
+                                  // Use cell sizes to determine how many cells to move per accumulated delta
+                                  double moveX = _panAccumDx;
+                                  double moveY = _panAccumDy;
+                                  if (_cellWidth != null && _cellWidth! > 0 && moveX.abs() >= _cellWidth!) {
+                                    int steps = (moveX.abs() / _cellWidth!).floor();
+                                    int dir = moveX > 0 ? 1 : -1;
+                                    for (int i = 0; i < steps; i++) _move(dir, 0);
+                                    _panAccumDx = moveX - steps * _cellWidth! * (moveX > 0 ? 1 : -1);
+                                  }
+                                  if (_cellHeight != null && _cellHeight! > 0 && moveY.abs() >= _cellHeight!) {
+                                    int steps = (moveY.abs() / _cellHeight!).floor();
+                                    int dir = moveY > 0 ? 1 : -1;
+                                    for (int i = 0; i < steps; i++) _move(0, dir);
+                                    _panAccumDy = moveY - steps * _cellHeight! * (moveY > 0 ? 1 : -1);
+                                  }
+                                } else {
+                                  if (_gestureLocked) return;
+                                  double adx = _panAccumDx.abs();
+                                  double ady = _panAccumDy.abs();
+                                  const threshold = 20; // pixels to register a swipe
+                                  if (adx > ady && adx > threshold) {
+                                    if (_panAccumDx > 0) _move(1, 0); else _move(-1, 0);
+                                    _gestureLocked = true;
+                                  } else if (ady > adx && ady > threshold) {
+                                    if (_panAccumDy > 0) _move(0, 1); else _move(0, -1);
+                                    _gestureLocked = true;
+                                  }
+                                }
+                              },
+                              onPanEnd: (details) {
+                                _panAccumDx = 0.0;
+                                _panAccumDy = 0.0;
+                                _gestureLocked = false;
+                              },
+                              onTap: () {},
+                              onTapDown: (_) {},
+                              child: Stack(
+                                key: _gridKey,
+                                children: [
+                                  GridView.builder(
+                                    physics: NeverScrollableScrollPhysics(),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 5,
+                                      childAspectRatio: 1,
                                     ),
-                                  );
-                                },
+                                    itemCount: 40,
+                                    itemBuilder: (context, index) {
+                                      int x = index % 5;
+                                      int y = index ~/ 5;
+                                      GridCell cell = provider.gameState!.grid[x][y];
+                                      bool showOpenBase = cell.isOpened;
+                                      bool isPlayerHere = (provider.gameState!.player.x == x && provider.gameState!.player.y == y);
+                                      return Container(
+                                        key: ValueKey('cell_${x}_${y}_${cell.isOpened}'),
+                                        margin: EdgeInsets.all(2),
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            Image.asset(showOpenBase ? 'lib/assets/ic_box_open.webp' : 'lib/assets/ic_box1.webp'),
+                                            if (cell.isOpened && _getContentImage(cell).isNotEmpty) Image.asset(_getContentImage(cell)),
+                                            if (isPlayerHere) Image.asset('lib/assets/ic_mine.webp', width: 50, height: 50),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+
+                                  if (_animatingGiftAsset != null && _startOffset != null && _endOffset != null)
+                                    AnimatedBuilder(
+                                      animation: _flyController!,
+                                      builder: (context, child) {
+                                        double t = _flyController!.value;
+                                        double x = _startOffset!.dx + (_endOffset!.dx - _startOffset!.dx) * Curves.easeInOut.transform(t);
+                                        double y = _startOffset!.dy + (_endOffset!.dy - _startOffset!.dy) * Curves.easeInOut.transform(t);
+                                        return Positioned(
+                                          left: x,
+                                          top: y,
+                                          child: Opacity(
+                                            opacity: 1.0 - t,
+                                            child: Image.asset(_animatingGiftAsset!, width: 40, height: 40),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
                               ),
-                              // Flying gift animation, compute positions relative to grid area
-                              if (_animatingGiftAsset != null && _startOffset != null && _endOffset != null)
-                                AnimatedBuilder(
-                                  animation: _flyController!,
-                                  builder: (context, child) {
-                                    double t = _flyController!.value;
-                                    double x = _startOffset!.dx + (_endOffset!.dx - _startOffset!.dx) * Curves.easeInOut.transform(t);
-                                    double y = _startOffset!.dy + (_endOffset!.dy - _startOffset!.dy) * Curves.easeInOut.transform(t);
-                                    return Positioned(
-                                      left: x,
-                                      top: y,
-                                      child: Opacity(
-                                        opacity: 1.0 - t,
-                                        child: Image.asset(_animatingGiftAsset!, width: 40, height: 40),
-                                      ),
-                                    );
-                                  },
-                                ),
-                            ],
+                            ),
                           ),
                         );
                       },
