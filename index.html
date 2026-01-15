@@ -31,6 +31,35 @@
 
   <title>giftgame</title>
   <link rel="manifest" href="manifest.json">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <style>
+    /* Prevent overscroll on mobile browsers for the whole body when playing */
+    html, body {
+      height: 100%;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+    /* Ensure game root covers full screen */
+    #flt-platform-view {
+      touch-action: none;
+    }
+  </style>
+  <script>
+    // Prevent default touchmove on the document to avoid page scrolling while playing
+    // Only prevent when the pointer starts inside the Flutter app container.
+    document.addEventListener('touchmove', function(e) {
+      // If the event originates from inside the flutter app, prevent page scroll
+      var el = e.target;
+      while (el) {
+        if (el.id === 'flt-platform-view' || el.classList && el.classList.contains('flt-glass-pane')) {
+          e.preventDefault();
+          return;
+        }
+        el = el.parentElement;
+      }
+    }, { passive: false });
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
