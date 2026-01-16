@@ -24250,7 +24250,7 @@ return n}}
 A.anB.prototype={
 $1(a){var s=A.dT().b
 s=s==null?null:s.canvasKitBaseUrl
-return(s==null?"https://www.gstatic.com/flutter-canvaskit/8cd19e509d6bece8ccd74aef027c4ca947363095/":s)+a},
+return(s==null?"/gametest/canvaskit/":s)+a},
 $S:46}
 A.ZK.prototype={
 e0(a,b){var s,r=this.a
