@@ -1,13 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:async';
 import '../models/game_state.dart';
 import '../models/player.dart';
 import '../models/grid_cell.dart';
 import '../models/leaderboard_entry.dart';
 
+// Conditional import for http client
+import 'http_helper.dart' if (dart.library.html) 'http_helper_web.dart' as httpHelper;
+
 class GameProvider with ChangeNotifier {
   GameState? _gameState;
+
+  // URL parameters from web (uid, token)
+  String? _uid;
+  String? _token;
+
+  // User info from API
+  String? _userAvatar;
+  String? _userNickname;
+  bool _isLoadingUserInfo = false;
+
+  String? get uid => _uid;
+  String? get token => _token;
+  String? get userAvatar => _userAvatar;
+  String? get userNickname => _userNickname;
+  bool get isLoadingUserInfo => _isLoadingUserInfo;
+
+  // Set URL parameters (called from main.dart on web)
+  void setUrlParams(String? uid, String? token) {
+    _uid = uid;
+    _token = token;
+    // Fetch user info when params are set
+    if (uid != null && token != null) {
+      fetchUserInfo();
+    }
+  }
+
+  // Fetch user info from API
+  Future<void> fetchUserInfo() async {
+    debugPrint('fetchUserInfo $_uid $_token');
+    if (_uid == null || _token == null) return;
+
+    _isLoadingUserInfo = true;
+    notifyListeners();
+
+    try {
+      final response = await httpHelper.httpGet(
+        'https://app.test.horovoice.com/api/charge_reward_api/get_activity_user_rank',
+        {
+          'uid': _uid!,
+          'token': _token!,
+          'event_id': '14',
+          'gift_id': '409',
+          'type': '2',
+          'language': 'en',
+        },
+      );
+      debugPrint('fetchUserInfo ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 1 && data['data'] != null) {
+          _userAvatar = data['data']['user']['avatar'];
+          _userNickname = data['data']['user']['user_nickname'];
+          debugPrint('User info loaded: avatar=$_userAvatar, nickname=$_userNickname');
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch user info: $e');
+    } finally {
+      _isLoadingUserInfo = false;
+      notifyListeners();
+    }
+  }
 
   // For UI animation: last opened cell position and content id
   int? lastOpenedX;
@@ -248,8 +315,18 @@ class GameProvider with ChangeNotifier {
   bool canMove(int dx, int dy) {
     if (_gameState == null) return false;
     if (_gameState!.player.steps <= 0 || _gameState!.player.health <= 0) return false;
-    int newX = _gameState!.player.x + dx;
-    int newY = _gameState!.player.y + dy;
+
+    int curX = _gameState!.player.x;
+    int curY = _gameState!.player.y;
+    int newX = curX + dx;
+    int newY = curY + dy;
+
+    // If player is at spawn above the grid (y == -1) and moving horizontally, entering row 0 is allowed
+    if (curY == -1 && dy == 0 && dx != 0) {
+      newY = 0;
+    }
+
+    // Match movePlayer's allowed range: y may be -1 (spawn) up to ROWS-1
     if (newX < 0 || newX >= GameState.COLS || newY < 0 || newY >= GameState.ROWS) return false;
     return true;
   }

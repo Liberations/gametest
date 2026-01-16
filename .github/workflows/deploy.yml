@@ -34,7 +34,7 @@ jobs:
           flutter --version || true
           which flutter || true
           flutter doctor -v || true
-          flutter build web --release --tree-shake-icons --base-href /gametest/ --analyze-size
+          flutter build web --release --tree-shake-icons --base-href /gametest/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

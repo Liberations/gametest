@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'providers/game_provider.dart';
 import 'screens/game_screen.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 void main() async {
+  String? uid;
+  String? token;
+
+  if (kIsWeb) {
+    // Uri.base contains the current page URL on web
+    final uri = Uri.base;
+    uid = uri.queryParameters['uid'];
+    token = uri.queryParameters['token'];
+    debugPrint('URL params: uid=$uid, token=$token');
+  }
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   runApp(
@@ -14,7 +25,7 @@ void main() async {
       fallbackLocale: const Locale('en'),
       child: MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => GameProvider()),
+          ChangeNotifierProvider(create: (_) => GameProvider()..setUrlParams(uid, token)),
         ],
         child: const MyApp(),
       ),
