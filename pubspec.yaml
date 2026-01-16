@@ -9,9 +9,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   provider: ^6.0.5
   shared_preferences: ^2.2.0
+  easy_localization: ^3.0.8
 
 dev_dependencies:
   flutter_test:
@@ -22,3 +25,4 @@ flutter:
   uses-material-design: true
   assets:
     - lib/assets/
+    - assets/lang/

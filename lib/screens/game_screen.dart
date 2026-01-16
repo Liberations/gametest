@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:giftgame/screens/test_change_lang.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../providers/game_provider.dart';
@@ -321,7 +322,7 @@ class _GameScreenState extends State<GameScreen>
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => LeaderboardScreen()),
+                  MaterialPageRoute(builder: (_) => TestChangeLang()),
                 );
               },
             ),

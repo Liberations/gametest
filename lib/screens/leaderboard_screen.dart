@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
 import '../models/leaderboard_entry.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class LeaderboardScreen extends StatelessWidget {
   const LeaderboardScreen({super.key});
@@ -13,27 +14,28 @@ class LeaderboardScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Leaderboard', style: TextStyle(color: Colors.white)),
+        title: Text('leaderboard_title'.tr(), style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       backgroundColor: Colors.black,
-      body: ListView.separated(
-        padding: EdgeInsets.all(16),
-        itemCount: entries.length,
-        separatorBuilder: (_, __) => Divider(color: Colors.white24),
-        itemBuilder: (context, index) {
-          final e = entries[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundImage: AssetImage(e.avatarAsset),
+      body: entries.isEmpty
+          ? Center(child: Text('no_data'.tr(), style: const TextStyle(color: Colors.white)))
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: entries.length,
+              separatorBuilder: (_, __) => const Divider(color: Colors.white24),
+              itemBuilder: (context, index) {
+                final e = entries[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: AssetImage(e.avatarAsset),
+                  ),
+                  title: Text(e.name, style: const TextStyle(color: Colors.white)),
+                  trailing: Text('${e.score}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                );
+              },
             ),
-            title: Text(e.name, style: TextStyle(color: Colors.white)),
-            trailing: Text('${e.score}', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          );
-        },
-      ),
     );
   }
 }
-

@@ -27,9 +27,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build web (release)
+      - name: Build web (release) with fallback
         run: |
-          flutter build web --release  --no-tree-shake-icons --base-href /gametest/
+          set -euo pipefail
+          echo "== diagnostics =="
+          flutter --version || true
+          which flutter || true
+          flutter doctor -v || true
+          flutter build web --release --tree-shake-icons --base-href /gametest/ --analyze-size
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

@@ -16,6 +16,11 @@ class Assets {
   static const String assetsIcLeft = 'lib/assets/ic_left.webp';
   static const String assetsIcMine = 'lib/assets/ic_mine.webp';
   static const String generatedAssets = 'lib/generated/assets.dart';
+  static const String langAr = 'assets/lang/ar.json';
+  static const String langEn = 'assets/lang/en.json';
+  static const String langEs = 'assets/lang/es.json';
+  static const String langPt = 'assets/lang/pt.json';
+  static const String langTr = 'assets/lang/tr.json';
   static const String libMain = 'lib/main.dart';
   static const String modelsGameState = 'lib/models/game_state.dart';
   static const String modelsGridCell = 'lib/models/grid_cell.dart';
@@ -26,5 +31,6 @@ class Assets {
   static const String screensGameScreen = 'lib/screens/game_screen.dart';
   static const String screensLeaderboardScreen = 'lib/screens/leaderboard_screen.dart';
   static const String screensSettingsScreen = 'lib/screens/settings_screen.dart';
+  static const String screensTestChangeLang = 'lib/screens/test_change_lang.dart';
 
 }

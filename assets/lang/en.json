@@ -1,0 +1,12 @@
+{
+  "leaderboard_title": "Leaderboard",
+  "nickname": "Nickname",
+  "score": "Score",
+  "no_data": "No players",
+  "switch_language": "Switch language",
+  "about_title": "About",
+  "about_intro": "Hi there 👋\n\n- 🔭 I’m currently working on flutter\n- 🌱 I’m currently learning python\n- 😄 Pronouns: they/them\n- ⚡ Fun fact: loves coding",
+  "settings_title": "Settings",
+  "support": "Support",
+  "supported_msg": "You supported {name}"
+}
