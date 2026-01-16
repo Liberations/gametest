@@ -1,0 +1,12 @@
+{
+  "leaderboard_title": "Liderlik Tablosu",
+  "nickname": "Kullanıcı adı",
+  "score": "Puan",
+  "no_data": "Oyuncu yok",
+  "switch_language": "Dili değiştir",
+  "about_title": "Hakkında",
+  "about_intro": "Merhaba 👋\n\n- 🔭 Şu anda flutter üzerinde çalışıyorum\n- 🌱 Şu anda python öğreniyorum\n- 😄 Zamirler: onlar\n- ⚡ İlginç gerçek: kod yazmayı sever",
+  "settings_title": "Ayarlar",
+  "support": "Destek",
+  "supported_msg": "{name} kişisini desteklediniz"
+}

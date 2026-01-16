@@ -1,0 +1,12 @@
+{
+  "leaderboard_title": "Classificação",
+  "nickname": "Apelido",
+  "score": "Pontuação",
+  "no_data": "Nenhum jogador",
+  "switch_language": "Mudar idioma",
+  "about_title": "Sobre",
+  "about_intro": "Oi 👋\n\n- 🔭 Atualmente trabalho com flutter\n- 🌱 Estou aprendendo python\n- 😄 Pronomes: eles\n- ⚡ Curiosidade: gosta de programar",
+  "settings_title": "Configurações",
+  "support": "Apoiar",
+  "supported_msg": "Você apoiou {name}"
+}
