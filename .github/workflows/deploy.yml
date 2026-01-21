@@ -34,13 +34,4 @@ jobs:
           flutter --version || true
           which flutter || true
           flutter doctor -v || true
-          flutter build web --release --dart-define=FLUTTER_WEB_CANVASKIT_URL=/gametest/canvaskit/ --no-tree-shake-icons --no-tree-shake-icons --base-href /gametest/
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
-          publish_branch: gh-pages
-          # optional: set a commit message
-          commit_message: "Deploy Flutter web to gh-pages (from ${{ github.sha }})"
+          flutter build web --release --no-tree-shake-icons --no-tree-shake-icons --base-href /fluttertest/

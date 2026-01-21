@@ -1,0 +1,16 @@
+{
+  "js_call_title": "JS 调用",
+  "not_running_on_web": "当前不是 Web 环境，无法调用原生接口",
+  "android_interface_not_found": "未找到 Android JS 接口",
+  "h5call_not_found": "Android 接口未实现 h5Call 方法",
+  "called_android": "已调用原生：{msg}",
+  "failed_call_android": "调用原生失败：{error}",
+  "lang_label": "语言",
+  "switch_language": "切换语言",
+  "recharge": "去充值",
+  "cp_rank": "CP 排行榜",
+  "invite_page": "邀请页面",
+  "visit_home": "访问主页",
+  "guest": "游客"
+}
+

@@ -32,7 +32,6 @@
   <title>giftgame</title>
   <link rel="manifest" href="manifest.json">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <style>
     /* Prevent overscroll on mobile browsers for the whole body when playing */
     html, body {
@@ -59,6 +58,56 @@
         el = el.parentElement;
       }
     }, { passive: false });
+  </script>
+
+  <!-- SVGA player (web) - used by the app to play .svga animations on web -->
+  <script src="https://cdn.jsdelivr.net/npm/svga.lite@1.0.0/dist/svga.lite.min.js"></script>
+  <script>
+    // Expose a simple global helper to play an SVGA by url.
+    window.playSvga = function(url) {
+      try {
+        // remove existing container if present
+        var existing = document.getElementById('svga_container');
+        if (existing) existing.remove();
+
+        var cont = document.createElement('div');
+        cont.id = 'svga_container';
+        cont.style.position = 'fixed';
+        cont.style.left = '50%';
+        cont.style.top = '50%';
+        cont.style.transform = 'translate(-50%,-50%)';
+        cont.style.zIndex = '999999';
+        cont.style.pointerEvents = 'none';
+
+        var canvas = document.createElement('canvas');
+        canvas.style.width = '320px';
+        canvas.style.height = '320px';
+        canvas.width = 320;
+        canvas.height = 320;
+        cont.appendChild(canvas);
+        document.body.appendChild(cont);
+
+        var player = new SVGA.Player(canvas);
+        var parser = new SVGA.Parser();
+        parser.load(url, function(videoItem) {
+          player.setVideoItem(videoItem);
+          player.startAnimation();
+          // remove after animation completes; estimate duration by frames/30 * 1000
+          try {
+            var frames = videoItem.frames || 60;
+            var duration = Math.max(1000, Math.floor(frames / (videoItem.frameRate || 30) * 1000));
+            setTimeout(function() { try { player.clear(); cont.remove(); } catch(e){} }, duration + 300);
+          } catch (e) {
+            setTimeout(function(){ try { player.clear(); cont.remove(); } catch(e){} }, 3000);
+          }
+        }, function(err) {
+          console.error('SVGA parse error', err);
+          if (cont && cont.remove) cont.remove();
+        });
+      } catch(e) {
+        console.error('playSvga error', e);
+      }
+    };
   </script>
 </head>
 <body>

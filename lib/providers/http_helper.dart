@@ -1,6 +1,6 @@
-// HTTP helper for native platforms (iOS, Android, Desktop)
+// HTTP helper for all platforms (web, mobile, desktop)
 import 'dart:convert';
-import 'dart:io';
+import 'package:http/http.dart' as http;
 
 class HttpResponse {
   final int statusCode;
@@ -10,27 +10,21 @@ class HttpResponse {
 
 Future<HttpResponse> httpGet(String url, Map<String, String> params) async {
   final uri = Uri.parse(url).replace(queryParameters: params);
-  final client = HttpClient();
   try {
-    final request = await client.getUrl(uri);
-    final response = await request.close();
-    final body = await response.transform(utf8.decoder).join();
-    return HttpResponse(response.statusCode, body);
-  } finally {
-    client.close();
+    final response = await http.get(uri).timeout(const Duration(seconds: 15));
+    return HttpResponse(response.statusCode, response.body);
+  } catch (e) {
+    // Return a 0 status to indicate network-level failure; caller should handle it
+    return HttpResponse(0, e.toString());
   }
 }
 
 Future<HttpResponse> httpPost(String url, Map<String, dynamic> data) async {
-  final client = HttpClient();
+  final uri = Uri.parse(url);
   try {
-    final request = await client.postUrl(Uri.parse(url));
-    request.headers.set('Content-Type', 'application/json');
-    request.write(jsonEncode(data));
-    final response = await request.close();
-    final body = await response.transform(utf8.decoder).join();
-    return HttpResponse(response.statusCode, body);
-  } finally {
-    client.close();
+    final response = await http.post(uri, headers: {'Content-Type': 'application/json'}, body: jsonEncode(data)).timeout(const Duration(seconds: 15));
+    return HttpResponse(response.statusCode, response.body);
+  } catch (e) {
+    return HttpResponse(0, e.toString());
   }
 }

@@ -1,12 +1,16 @@
 {
-  "leaderboard_title": "Leaderboard",
-  "nickname": "Nickname",
-  "score": "Score",
-  "no_data": "No players",
-  "switch_language": "Switch language",
-  "about_title": "About",
-  "about_intro": "Hi there 👋\n\n- 🔭 I’m currently working on flutter\n- 🌱 I’m currently learning python\n- 😄 Pronouns: they/them\n- ⚡ Fun fact: loves coding",
-  "settings_title": "Settings",
-  "support": "Support",
-  "supported_msg": "You supported {name}"
+  "js_call_title": "JS Call",
+  "not_running_on_web": "Not running on web",
+  "android_interface_not_found": "Android JS interface not found",
+  "h5call_not_found": "h5Call method not found on Android interface",
+  "called_android": "Called Android: {msg}",
+  "failed_call_android": "Failed to call Android: {error}",
+  "lang_label": "Language",
+  "recharge": "Recharge",
+  "cp_rank": "CP Rank",
+  "invite_page": "Invite",
+  "visit_home": "Visit home ",
+  "guest": "Guest",
+  "cancel": "Cancel",
+  "ok": "OK"
 }

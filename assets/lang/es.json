@@ -1,12 +1,16 @@
 {
-  "leaderboard_title": "Clasificación",
-  "nickname": "Apodo",
-  "score": "Puntuación",
-  "no_data": "No hay jugadores",
-  "switch_language": "Cambiar idioma",
-  "about_title": "Acerca de",
-  "about_intro": "Hola 👋\n\n- 🔭 Actualmente trabajo en flutter\n- 🌱 Estoy aprendiendo python\n- 😄 Pronombres: ellos\n- ⚡ Dato curioso: le gusta programar",
-  "settings_title": "Configuración",
-  "support": "Apoyar",
-  "supported_msg": "Has apoyado a {name}"
+  "js_call_title": "Llamada JS",
+  "not_running_on_web": "No se está ejecutando en web",
+  "android_interface_not_found": "Interfaz JS de Android no encontrada",
+  "h5call_not_found": "Método h5Call no encontrado en la interfaz de Android",
+  "called_android": "Llamado a Android: {msg}",
+  "failed_call_android": "Fallo al llamar a Android: {error}",
+  "lang_label": "Idioma",
+  "recharge": "Recargar",
+  "cp_rank": "Ranking CP",
+  "invite_page": "Invitar",
+  "visit_home": "Visitar inicio ",
+  "guest": "Invitado",
+  "cancel": "Cancelar",
+  "ok": "OK"
 }

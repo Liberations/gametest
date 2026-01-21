@@ -21,6 +21,7 @@ class Assets {
   static const String langEs = 'assets/lang/es.json';
   static const String langPt = 'assets/lang/pt.json';
   static const String langTr = 'assets/lang/tr.json';
+  static const String langZh = 'assets/lang/zh.json';
   static const String libMain = 'lib/main.dart';
   static const String modelsGameState = 'lib/models/game_state.dart';
   static const String modelsGridCell = 'lib/models/grid_cell.dart';
@@ -29,6 +30,7 @@ class Assets {
   static const String providersGameProvider = 'lib/providers/game_provider.dart';
   static const String providersHttpHelper = 'lib/providers/http_helper.dart';
   static const String providersHttpHelperWeb = 'lib/providers/http_helper_web.dart';
+  static const String providersTestJsProvider = 'lib/providers/TestJsProvider.dart';
   static const String screensAboutScreen = 'lib/screens/about_screen.dart';
   static const String screensGameScreen = 'lib/screens/game_screen.dart';
   static const String screensLeaderboardScreen = 'lib/screens/leaderboard_screen.dart';
