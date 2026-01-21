@@ -1,0 +1,8 @@
+api/bzone/get_dynamic_list 多了 一层data  
+/bzone/get_like_list 多了 一层bzone_like
+/get_reply_list 多了 一层 reply_item
+缺少 user_api/detection_permission
+bzone/get_dynamic_info is_like 都是0
+/bzone/request_like 重复调用点赞数会一直加
+delete_reply {"code":102,"msg":"params error"}
+get_reply_list中缺少二级评论字段reply_list
