@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:giftgame/providers/TestJsProvider.dart';
+import 'package:giftgame/screens/RechargeEventView.dart';
 import 'package:giftgame/screens/TestJsonDart.dart';
 import 'package:provider/provider.dart';
 
@@ -56,7 +57,7 @@ class MyApp extends StatelessWidget {
           context,
         ).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
       ),
-      home: const TestJsCallPage(),
+      home: const RechargeEventview(),
       locale: context.locale,
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,

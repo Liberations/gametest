@@ -16,6 +16,7 @@ dependencies:
   shared_preferences: ^2.2.0
   easy_localization: ^3.0.8
   http: ^1.2.0
+  ninepatch_image: ^0.0.4
 
 
 dev_dependencies:
