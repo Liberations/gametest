@@ -124,32 +124,29 @@ class _RechargeEventviewState extends State<RechargeEventview> {
   Widget _buildRewardTile(RewardItem r, double size) {
     // size is total tile height/width (design 140)
     return SizedBox(
-      width: 70,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 70,
-            height: 70,
-            padding: EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              image: const DecorationImage(
-                image: AssetImage('lib/assets/recharge_gift_box_bg.webp'),
-                fit: BoxFit.cover,
+          AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              padding: EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                image: const DecorationImage(
+                  image: AssetImage('lib/assets/recharge_gift_box_bg.webp'),
+                  fit: BoxFit.cover,
+                ),
+                borderRadius: BorderRadius.circular(8),
               ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Image.asset(
-                'lib/assets/fill_code_coin_big.webp',
-                width: 65,
-                height: 65,
-                fit: BoxFit.contain,
+              child: Center(
+                child: Image.asset(
+                  'lib/assets/fill_code_coin_big.webp',
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ),
           SizedBox(
-            width: 132,
             child: Center(
               child: Text(
                 "diamond*10M",
@@ -255,9 +252,7 @@ class _RechargeEventviewState extends State<RechargeEventview> {
                             ? 1
                             : availableWidth;
 
-                        final int cols = rewards.length < 4
-                            ? rewards.length
-                            : 4;
+                        final int cols = 4;
                         final double maxItem =
                             (safeAvailable - (cols - 1) * spacing) / cols;
                         final double itemUsed =
@@ -276,7 +271,7 @@ class _RechargeEventviewState extends State<RechargeEventview> {
                                   crossAxisCount: cols,
                                   mainAxisSpacing: spacing,
                                   crossAxisSpacing: spacing,
-                                  childAspectRatio: 0.8,
+                                  childAspectRatio: 0.7,
                                 ),
                             itemCount: rewards.length,
                             itemBuilder: (_, idx) =>
@@ -376,11 +371,11 @@ class _RechargeEventviewState extends State<RechargeEventview> {
                                       MediaQuery.of(ctx).size.width / 750.0;
                                   return Padding(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
+                                      horizontal: 18,
                                       vertical: 10,
                                     ),
                                     child: Padding(
-                                      padding: EdgeInsets.all(12.0 * scale),
+                                      padding: EdgeInsets.only(left: 20.0 * scale,right: 20.0 * scale ),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -389,35 +384,35 @@ class _RechargeEventviewState extends State<RechargeEventview> {
                                             'Rules',
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              fontSize: 28.0 * scale,
+                                              fontSize: 20,
                                             ),
                                           ),
                                           SizedBox(height: 8.0 * scale),
                                           Text(
                                             '1. Recharge amounts stack across the event period.',
                                             style: TextStyle(
-                                              fontSize: 28.0 * scale,
+                                              fontSize: 14,
                                               color: const Color(0xFFFFEDA1),
                                             ),
                                           ),
                                           Text(
                                             '2. Each tier can only be claimed once per account.',
                                             style: TextStyle(
-                                              fontSize: 28.0 * scale,
+                                              fontSize: 14,
                                               color: const Color(0xFFFFEDA1),
                                             ),
                                           ),
                                           Text(
                                             '3. Rewards will be delivered to your in-game mailbox.',
                                             style: TextStyle(
-                                              fontSize: 28.0 * scale,
+                                              fontSize: 14,
                                               color: const Color(0xFFFFEDA1),
                                             ),
                                           ),
                                           Text(
                                             '4. The organizer reserves the right to final interpretation.',
                                             style: TextStyle(
-                                              fontSize: 28.0 * scale,
+                                              fontSize: 14,
                                               color: const Color(0xFFFFEDA1),
                                             ),
                                           ),
